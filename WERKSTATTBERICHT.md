@@ -1,7 +1,8 @@
 # Werkstattbericht: Wie der Fotoaufräumer entstanden ist
 
 > **English summary.** This tool was built in a single night-time conversation between Uta Kähler
-> and Claude in Claude Code. Uta has no programming background; she described the problem by
+> and Claude in Claude Code, after Gemini had guided her through setting up GitHub. Uta has no
+> programming background; she described the problem by
 > dictation, installed Python from the Microsoft Store, ran each version on about 5,000 of her own
 > photos and reported back what she saw. Claude wrote all of the code. Three of her test reports
 > (duplicates not shown, a crash on Windows, missing WhatsApp images) each led to a concrete fix;
@@ -11,6 +12,7 @@
 ## Wer was gemacht hat
 
 - **Uta Kähler:** Ziel, Anforderungen, Tests mit der echten Fotosammlung, Abnahme.
+- **Gemini (Google):** Orientierung auf GitHub, das sie vorher nie benutzt hatte: Konto und Repository.
 - **Claude (Anthropic, in Claude Code):** Entwurf, gesamter Code, Anleitung, Fehlersuche.
 
 Kein Pflichtenheft, keine Vorlage. Die Anforderungen kamen gesprochen, per Diktierfunktion, und
