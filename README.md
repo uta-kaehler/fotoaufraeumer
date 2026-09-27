@@ -25,21 +25,19 @@ The interface and manual are in German ([ANLEITUNG.md](ANLEITUNG.md)). It was bu
 
 ## How it was developed
 
-This project was developed through a human-led, AI-assisted workflow across multiple environments.
+This project was developed collaboratively: by one person who writes no code, working with several AI systems across different environments.
 
-The project lead defined the user problem, set the safety constraints and acceptance criteria, assigned tasks according to the provisional strengths of different AI systems, tested successive versions in real use, and directed further iteration through concrete feedback.
+The way of working was a conversation, not a hand-off. Uta Kähler described what she needed and what the tool must never do. Claude proposed how it could work and contributed ideas of its own. She listened, asked back, chose what to adopt, and tested each version in real use. What she observed in use became the next step.
 
-AI systems supported different parts of the process: orientation in unfamiliar technical environments, implementation, debugging, documentation and refinement. The work was coordinated through a shared project goal rather than treated as a sequence of isolated prompts.
-
-Coordination did not mean delegating a finished specification. It meant keeping the project coherent across systems and platforms: deciding what needed clarification, which system was best placed to support a particular step, testing whether the implementation matched the intended use, and translating observations from use into the next development decision.
+Final responsibility stayed with her. That includes the questions nobody raises automatically: what a tool may do with private photos, what data protection requires, what happens if something goes wrong. AI systems often think along on such points, and she asks them to. Keeping these questions in view, and answering for the result, remains the responsibility of the person whose name is on the project.
 
 | Participant | Contribution |
 | --- | --- |
-| **Project lead** | Defined the problem, requirements, safety constraints and acceptance criteria; tested releases with a personal photo library of approximately 5,000 images; evaluated behaviour in context and directed iteration |
-| **Gemini** (Google) | Supported orientation in unfamiliar platform workflows |
-| **Claude Code** (Anthropic) | Supported implementation, debugging, documentation and iterative refinement |
+| **Uta Kähler** (final responsibility) | Described the problem and what the tool must never do; weighed the proposals and decided what to adopt; kept overarching questions such as data protection in view; tested each version with about 5,000 of her own photos; decided what counted as done |
+| **Gemini** (Google) | Supported orientation in unfamiliar platform workflows (setting up GitHub) |
+| **Claude Code** (Anthropic) | Proposed solutions and ideas; implementation, debugging, documentation and iterative refinement |
 
-The project lead writes no code. This project demonstrates a different competence: directing multiple AI systems toward a coherent goal — specifying what a tool should and should not do, evaluating its behaviour in context, and making informed decisions about each next iteration. This is process responsibility in AI-assisted development, not software development, and the two are not the same.
+Uta Kähler writes no code. What this project shows is a different competence: describing clearly what is needed, engaging with what AI systems propose, deciding what to take on, noticing in use what needs adjusting, and carrying final responsibility for the result. This is responsibility for the process in AI-assisted development, not software development, and the two are not the same.
 
 ## From requirements to use
 
@@ -48,13 +46,13 @@ There were no formal specification documents or user stories. Requirements emerg
 > *“Whenever I want to delete something, it's just too small — you can't even tell what you're deleting. So I always end up leaving it, frustrated.”*  
 > (“…das ist einfach zu klein, man erkennt gar nicht, was man löscht. Deswegen lasse ich es dann immer gefrustet.”)
 
-That sentence determined two central design decisions: show images large, and never delete them directly—only move them.
+From that sentence came the two central design decisions, proposed by Claude and adopted by her: show images large, and never delete them directly—only move them.
 
-Acceptance meant real use. Test observations from the first evening—for example, “it says 197 duplicates, but they don't show up,” a screenshot of a crash, and “the WhatsApp stuff isn't shown at all”—each led to concrete fixes. A further observation, that sorting by year, month and place would be useful, became a feature in the next iteration.
+Acceptance meant real use. Observations from the first evening—for example, “it says 197 duplicates, but they don't show up,” a screenshot of a crash, and “the WhatsApp stuff isn't shown at all”—each led to a concrete adjustment. A further remark, that sorting by year, month and place would be useful, became a feature in the next iteration. The whole session took about one hour.
 
-This repository therefore documents both a working tool and a practical development process: a real-world problem translated into requirements, implemented with AI assistance, and improved through human-led testing and iteration.
+This repository therefore documents both a working tool and a practical way of working: a real-world problem put into words, developed in conversation with AI systems, and adjusted step by step through real use.
 
-The [Werkstattbericht](WERKSTATTBERICHT.md) (workshop report, in German with an English summary) records the process: original requirement statements, issues surfaced in testing, and the changes they prompted.
+The [Werkstattbericht](WERKSTATTBERICHT.md) (workshop report, in German with an English summary) records the process: the original requirement statements, what testing brought to light, and the adjustments that followed.
 
 ## Under the hood
 
