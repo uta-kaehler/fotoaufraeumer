@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fotoaufräumer</title>
+<style>
+  :root {
+    --grund: #f6f4ef; --karte: #ffffff; --text: #222; --leise: #6b6b6b;
+    --akzent: #2f6f5e; --weg: #c0392b; --doku: #2c5d9c; --rand: #ddd8cc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --grund: #1c1c1a; --karte: #2a2a27; --text: #eee; --leise: #aaa; --rand: #444; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.4 system-ui, "Segoe UI", sans-serif; background: var(--grund); color: var(--text); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--grund); border-bottom: 1px solid var(--rand); padding: 10px 16px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  h1 small { font-weight: normal; color: var(--leise); font-size: 13px; }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; }
+  nav button { border: 1px solid var(--rand); background: var(--karte); color: var(--text); border-radius: 18px; padding: 6px 14px; cursor: pointer; font-size: 15px; }
+  nav button.aktiv { background: var(--akzent); color: #fff; border-color: var(--akzent); }
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; font-size: 14px; }
+  .leiste label { display: flex; align-items: center; gap: 6px; }
+  .knopf { border: 0; border-radius: 6px; padding: 8px 14px; font-size: 15px; cursor: pointer; color: #fff; background: var(--akzent); }
+  .knopf.weg { background: var(--weg); }
+  .knopf.doku { background: var(--doku); }
+  .knopf.hell { background: transparent; color: var(--text); border: 1px solid var(--rand); }
+  .knopf:disabled { opacity: .4; cursor: default; }
+  .hilfe { color: var(--leise); font-size: 14px; margin: 12px 16px 0; max-width: 900px; }
+  main { padding: 12px 16px 80px; }
+  .gruppe { background: var(--karte); border: 1px solid var(--rand); border-radius: 10px; padding: 10px; margin-bottom: 16px; }
+  .gruppe h3 { margin: 0 0 8px; font-size: 14px; color: var(--leise); font-weight: normal; }
+  .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--kachel, 300px), 1fr)); gap: 10px; }
+  .foto { position: relative; background: var(--karte); border: 3px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; }
+  .foto img { display: block; color: transparent; width: 100%; aspect-ratio: 4/3; object-fit: contain; background: #0001; }
+  .foto .info { font-size: 12px; color: var(--leise); padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .foto.markiert { border-color: var(--weg); }
+  .foto.markiert img { opacity: .45; }
+  .foto.markiert::after { content: "weg"; position: absolute; top: 8px; right: 8px; background: var(--weg); color: #fff; padding: 2px 10px; border-radius: 12px; font-weight: bold; }
+  .foto.empfohlen::before { content: "★ bestes"; position: absolute; top: 8px; left: 8px; background: var(--akzent); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 13px; z-index: 1; }
+  .foto .lupe { position: absolute; bottom: 30px; right: 8px; background: #000a; color: #fff; border: 0; border-radius: 50%; width: 34px; height: 34px; font-size: 18px; cursor: zoom-in; }
+  .seiten { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 20px 0; }
+  #gross { position: fixed; inset: 0; background: #000e; display: none; z-index: 10; align-items: center; justify-content: center; flex-direction: column; }
+  #gross img { max-width: 96vw; max-height: 88vh; }
+  #gross p { color: #ddd; margin: 8px; font-size: 14px; }
+  #meldung { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 8px; display: none; z-index: 20; }
+  #filter { margin: 10px 16px 0; display: none; }
+  #filter .zeile { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+  #filter .zeile b { width: 56px; font-size: 14px; color: var(--leise); font-weight: normal; }
+  #filter button { border: 1px solid var(--rand); background: var(--karte); color: var(--text); border-radius: 14px; padding: 3px 11px; cursor: pointer; font-size: 14px; }
+  #filter button small { color: var(--leise); }
+  #filter button.aktiv { background: var(--doku); color: #fff; border-color: var(--doku); }
+  #filter button.aktiv small { color: #dde; }
+  .leer { text-align: center; color: var(--leise); padding: 60px 0; font-size: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fotoaufräumer <small id="ordner"></small></h1>
+  <nav id="reiter"></nav>
+  <div class="leiste">
+    <label id="schwelleBox">Grenze <input type="range" id="schwelle"> <span id="schwelleWert"></span></label>
+    <label>Bildgröße <input type="range" id="kachel" min="160" max="700" value="300"></label>
+    <button class="knopf hell" id="alleSeite">Alle auf dieser Seite markieren</button>
+    <button class="knopf hell" id="keine">Markierung aufheben</button>
+    <span style="flex:1"></span>
+    <button class="knopf doku" id="zuDokumente" disabled>In „_Dokumente“ verschieben</button>
+    <button class="knopf weg" id="aussortieren" disabled>Aussortieren</button>
+    <button class="knopf" id="zurueck" disabled style="display:none">Zurückholen</button>
+  </div>
+</header>
+<p class="hilfe" id="hilfe"></p>
+<div id="filter"></div>
+<main id="inhalt"></main>
+<div id="gross"><img alt=""><p></p></div>
+<div id="meldung"></div>
+
+<script>
+const REITER = {
+  stoebern:    { name: "Stöbern", hilfe: "Alle Fotos nach Jahr, Monat und Land. Wähl oben aus, wohin du willst – die Zahlen zeigen, wie viele Fotos dort liegen. Das Land kommt aus den Standortdaten der Kamera; Fotos ohne diese Daten stehen unter „ohne Ort“." },
+  doppelt:     { name: "Doppelte", hilfe: "Fotos, die gleich oder fast gleich sind – auch Serienbilder. Das beste ist mit ★ markiert, die übrigen sind schon zum Aussortieren vorgemerkt. Klick auf ein Foto ändert die Markierung, die Lupe zeigt es ganz groß." },
+  unscharf:    { name: "Unscharf", hilfe: "Die unschärfsten Fotos zuerst. Mit dem Regler „Grenze“ legst du fest, wie unscharf ein Foto sein muss, um hier zu erscheinen. Nichts ist vorgemerkt – klick an, was weg soll.", schwelle: [5, 400, 60] },
+  dokumente:   { name: "Dokumente?", hilfe: "Fotos, die nach Papier, Zetteln oder Schrift aussehen. Brauchbares kannst du in den Ordner „_Dokumente“ verschieben, Sinnloses aussortieren. Der Regler bestimmt, wie streng gesucht wird.", schwelle: [0.3, 0.95, 0.6], schritt: 0.01 },
+  screenshot:  { name: "Screenshots", hilfe: "Alle Bildschirmfotos, die neuesten zuerst." },
+  whatsapp:    { name: "WhatsApp", hilfe: "Bilder, die über WhatsApp gekommen sind, die neuesten zuerst." },
+  aussortiert: { name: "Aussortiert", hilfe: "Alles, was du bisher aussortiert oder zu den Dokumenten verschoben hast. Nichts davon ist gelöscht. Markiere Fotos und hol sie mit „Zurückholen“ an ihren alten Platz." },
+  probleme:    { name: "Probleme", hilfe: "Dateien, die sich nicht öffnen ließen. Die bleiben einfach, wo sie sind." },
+};
+const PRO_SEITE = 60;
+const MONATE = ["", "Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+let filter = {};
+try { filter = JSON.parse(hol("filter") || "{}"); } catch (e) {}
+let reiter = "stoebern", daten = [], seite = 0, markiert = new Set(), zahlen = {};
+const schwellen = {};
+const $ = (id) => document.getElementById(id);
+
+function merk(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function hol(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+async function zahlenLaden() {
+  zahlen = await (await fetch("/api/zahlen")).json();
+  $("ordner").textContent = zahlen.ordner + " · " + zahlen.gesamt + " Fotos";
+  const nav = $("reiter"); nav.innerHTML = "";
+  for (const [k, r] of Object.entries(REITER)) {
+    if (k === "probleme" && !zahlen.probleme) continue;
+    const b = document.createElement("button");
+    b.textContent = r.name + (zahlen[k] !== undefined ? ` (${zahlen[k]})` : "");
+    b.className = k === reiter ? "aktiv" : "";
+    b.onclick = () => wechseln(k);
+    nav.append(b);
+  }
+}
+
+async function wechseln(k) {
+  reiter = k; seite = 0; markiert.clear();
+  const r = REITER[k];
+  $("hilfe").textContent = r.hilfe;
+  $("schwelleBox").style.display = r.schwelle ? "" : "none";
+  $("filter").style.display = k === "stoebern" ? "block" : "none";
+  if (r.schwelle) {
+    const s = $("schwelle");
+    s.min = r.schwelle[0]; s.max = r.schwelle[1]; s.step = r.schritt || 1;
+    s.value = schwellen[k] ?? r.schwelle[2];
+    $("schwelleWert").textContent = s.value;
+  }
+  const imAussortiert = k === "aussortiert";
+  $("aussortieren").style.display = imAussortiert ? "none" : "";
+  $("zuDokumente").style.display = imAussortiert ? "none" : "";
+  $("zurueck").style.display = imAussortiert ? "" : "none";
+  await zahlenLaden();
+  await laden();
+}
+
+async function laden() {
+  const s = REITER[reiter].schwelle ? $("schwelle").value : 0;
+  $("inhalt").innerHTML = `<p class="leer">Wird geladen …</p>`;
+  try {
+    const f = reiter === "stoebern" ? "&" + new URLSearchParams(filter) : "";
+    if (reiter === "stoebern") filterZeigen(await (await fetch("/api/uebersicht?" + new URLSearchParams(filter))).json());
+    const antwort = await fetch(`/api/liste?reiter=${reiter}&schwelle=${s}${f}`);
+    daten = await antwort.json();
+    if (!antwort.ok) throw new Error(daten.fehler || antwort.status);
+  } catch (e) {
+    $("inhalt").innerHTML = `<p class="leer">Das hat nicht geklappt: ${e.message}<br>Steht im schwarzen Fenster etwas Rotes?</p>`;
+    return;
+  }
+  if (reiter === "doppelt") daten.filter(f => !f.empfohlen).forEach(f => markiert.add(f.id));
+  zeigen();
+}
+
+function filterZeigen(u) {
+  const box = $("filter"); box.innerHTML = "";
+  const zeile = (titel, eintraege, schluessel, beschriftung) => {
+    const z = document.createElement("div"); z.className = "zeile";
+    z.innerHTML = `<b>${titel}</b>`;
+    const alle = eintraege.reduce((n, e) => n + e[1], 0);
+    for (const [wert, anzahl] of [["", alle], ...eintraege]) {
+      const b = document.createElement("button");
+      const w = wert === null ? "-" : String(wert);
+      b.innerHTML = `${wert === "" ? "alle" : beschriftung(wert)} <small>${anzahl}</small>`;
+      b.className = (filter[schluessel] || "") === w ? "aktiv" : "";
+      b.onclick = () => {
+        if (w) filter[schluessel] = w; else delete filter[schluessel];
+        if (schluessel === "jahr") delete filter.monat;
+        merk("filter", JSON.stringify(filter)); seite = 0; markiert.clear(); laden();
+      };
+      z.append(b);
+    }
+    box.append(z);
+  };
+  zeile("Jahr", u.jahre, "jahr", w => w);
+  if (u.monate.length) zeile("Monat", u.monate, "monat", w => MONATE[w]);
+  zeile("Land", u.laender, "land", w => w === null ? "ohne Ort" : w);
+}
+
+function seitenInhalt() {
+  if (reiter !== "doppelt") return daten.slice(seite * PRO_SEITE, (seite + 1) * PRO_SEITE);
+  // Doppelte: ganze Gruppen pro Seite, nie eine Gruppe zerschneiden
+  const gruppen = [];
+  for (const f of daten) {
+    if (!gruppen.length || gruppen.at(-1)[0].gruppe !== f.gruppe) gruppen.push([]);
+    gruppen.at(-1).push(f);
+  }
+  const seiten = []; let aktuell = [], anzahl = 0;
+  for (const g of gruppen) {
+    if (anzahl && anzahl + g.length > PRO_SEITE) { seiten.push(aktuell); aktuell = []; anzahl = 0; }
+    aktuell.push(g); anzahl += g.length;
+  }
+  if (aktuell.length) seiten.push(aktuell);
+  seitenAnzahl = seiten.length;
+  return seiten[seite] || [];
+}
+let seitenAnzahl = 1;
+
+function datum(t) {
+  return new Date(t * 1000).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function karte(f) {
+  const d = document.createElement("div");
+  d.className = "foto" + (markiert.has(f.id) ? " markiert" : "") + (reiter === "doppelt" && f.empfohlen ? " empfohlen" : "");
+  const mb = (f.groesse / 1048576).toFixed(1);
+  const ort = (f.stadt ? ` · ${f.stadt}, ${f.land}` : "") +
+    (f.ort ? ` · in _${f.ort === "aussortiert" ? "Aussortiert" : "Dokumente"}` : "");
+  d.innerHTML = `<img loading="lazy" alt=""><button class="lupe" title="Groß anzeigen">⤢</button>
+    <div class="info" title="${f.pfad}">${f.zeit ? datum(f.zeit) : ""} · ${mb} MB${ort}<br>${f.pfad}</div>`;
+  if (f.fehler) d.querySelector(".info").innerHTML = `${f.pfad}<br>${f.fehler}`;
+  else d.querySelector("img").src = `/api/bild?id=${f.id}&g=600`;
+  d.onclick = () => {
+    if (f.fehler) return;
+    markiert.has(f.id) ? markiert.delete(f.id) : markiert.add(f.id);
+    d.classList.toggle("markiert");
+    knoepfe();
+  };
+  d.querySelector(".lupe").onclick = (e) => {
+    e.stopPropagation();
+    const g = $("gross");
+    g.querySelector("img").src = `/api/bild?id=${f.id}&g=1600`;
+    g.querySelector("p").textContent = `${f.pfad} · ${f.breite}×${f.hoehe} · Schärfe ${f.schaerfe}`;
+    g.style.display = "flex";
+  };
+  return d;
+}
+
+function zeigen() {
+  const inhalt = $("inhalt"); inhalt.innerHTML = "";
+  if (!daten.length) { inhalt.innerHTML = `<p class="leer">Hier ist nichts (mehr). 🎉</p>`; knoepfe(); return; }
+  const teil = seitenInhalt();
+  if (reiter === "doppelt") {
+    for (const g of teil) {
+      const box = document.createElement("div"); box.className = "gruppe";
+      box.innerHTML = `<h3>${g.length} ähnliche Fotos · ${datum(g[0].zeit)}</h3>`;
+      const r = document.createElement("div"); r.className = "raster";
+      g.forEach(f => r.append(karte(f)));
+      box.append(r); inhalt.append(box);
+    }
+  } else {
+    seitenAnzahl = Math.ceil(daten.length / PRO_SEITE);
+    const r = document.createElement("div"); r.className = "raster";
+    teil.forEach(f => r.append(karte(f)));
+    inhalt.append(r);
+  }
+  const nav = document.createElement("div"); nav.className = "seiten";
+  nav.innerHTML = `<button class="knopf hell" ${seite ? "" : "disabled"}>← zurück</button>
+    <span>Seite ${seite + 1} von ${seitenAnzahl} · ${daten.length} Fotos</span>
+    <button class="knopf hell" ${seite + 1 < seitenAnzahl ? "" : "disabled"}>weiter →</button>`;
+  const [vor, , nach] = nav.children;
+  vor.onclick = () => { seite--; zeigen(); scrollTo(0, 0); };
+  nach.onclick = () => { seite++; zeigen(); scrollTo(0, 0); };
+  inhalt.append(nav);
+  knoepfe();
+}
+
+function sichtbareIds() {
+  const teil = seitenInhalt();
+  return (reiter === "doppelt" ? teil.flat() : teil).map(f => f.id);
+}
+
+function knoepfe() {
+  // Nur markierte Fotos der aktuellen Seite werden verschoben – was man nicht sieht, wird nicht angefasst.
+  const n = sichtbareIds().filter(id => markiert.has(id)).length;
+  $("aussortieren").textContent = `${n} aussortieren`;
+  $("zuDokumente").textContent = `${n} nach „_Dokumente“`;
+  $("zurueck").textContent = `${n} zurückholen`;
+  for (const id of ["aussortieren", "zuDokumente", "zurueck"]) $(id).disabled = !n;
+}
+
+async function verschieben(nach) {
+  const ids = sichtbareIds().filter(id => markiert.has(id));
+  if (!ids.length) return;
+  const antwort = await (await fetch("/api/verschieben", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, nach }),
+  })).json();
+  melden(`${antwort.erledigt} Fotos ${nach === "" ? "zurückgeholt" : "verschoben"}.` +
+    (antwort.probleme.length ? ` ${antwort.probleme.length} Probleme: ${antwort.probleme[0]}` : ""));
+  ids.forEach(id => markiert.delete(id));
+  const behalten = seite;
+  await zahlenLaden(); await laden();
+  seite = Math.min(behalten, Math.max(0, seitenAnzahl - 1)); zeigen();
+}
+
+function melden(text) {
+  const m = $("meldung"); m.textContent = text; m.style.display = "block";
+  clearTimeout(melden.t); melden.t = setTimeout(() => m.style.display = "none", 5000);
+}
+
+$("aussortieren").onclick = () => verschieben("aussortiert");
+$("zuDokumente").onclick = () => verschieben("dokumente");
+$("zurueck").onclick = () => verschieben("");
+$("alleSeite").onclick = () => { sichtbareIds().forEach(id => markiert.add(id)); zeigen(); };
+$("keine").onclick = () => { sichtbareIds().forEach(id => markiert.delete(id)); zeigen(); };
+$("gross").onclick = () => $("gross").style.display = "none";
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("gross").style.display = "none"; });
+$("schwelle").oninput = () => { $("schwelleWert").textContent = $("schwelle").value; };
+$("schwelle").onchange = () => { schwellen[reiter] = $("schwelle").value; seite = 0; markiert.clear(); laden(); };
+$("kachel").oninput = () => { document.body.style.setProperty("--kachel", $("kachel").value + "px"); merk("kachel", $("kachel").value); };
+if (hol("kachel")) { $("kachel").value = hol("kachel"); document.body.style.setProperty("--kachel", hol("kachel") + "px"); }
+
+wechseln("stoebern");
+</script>
+</body>
+</html>
